@@ -2,6 +2,7 @@
 #define __MAIN_WINDOW_H__
 
 #include <QtWidgets/QMainWindow>
+#include <boost/signals2.hpp>
 
 class MainWindow : public QMainWindow
 {
@@ -10,6 +11,10 @@ class MainWindow : public QMainWindow
 public:
 
   MainWindow();
+
+  boost::signals2::signal<void (const std::string& target, const std::string& rules)> onRequestScan;
+
+  void getUserInput();
 
 private:
 

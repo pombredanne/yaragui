@@ -8,7 +8,7 @@ Scanner::~Scanner()
   m_thread->join();
 }
 
-Scanner::Scanner(boost::asio::io_service& caller) : m_caller(caller)
+Scanner::Scanner(boost::asio::io_service& caller) : m_caller(caller), m_scanRunning(false), m_scanAborted(false)
 {
   m_thread = boost::make_shared<boost::thread>(boost::bind(&Scanner::thread, this));
 }
@@ -16,6 +16,20 @@ Scanner::Scanner(boost::asio::io_service& caller) : m_caller(caller)
 void Scanner::compile(const std::string& file, const std::string& ns, boost::function<void (CompileResult::Ref result)> callback)
 {
   m_io.post(boost::bind(&Scanner::threadCompile, this, file, ns, callback));
+}
+
+bool Scanner::scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
+{
+  if (m_scanRunning) {
+    return false;
+  }
+  m_io.post(boost::bind(&Scanner::threadScanStart, this, rules, file, timeout, resultCallback, completeCallback));
+  return true;
+}
+
+void Scanner::scanStop()
+{
+  m_scanAborted = true;
 }
 
 void Scanner::threadCompile(const std::string& file, const std::string& ns, boost::function<void (CompileResult::Ref result)> callback)
@@ -64,6 +78,24 @@ void Scanner::threadCompile(const std::string& file, const std::string& ns, boos
   m_caller.post(boost::bind(callback, result)); /* compile success */
 }
 
+void Scanner::threadScanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
+{
+  m_scanResultCallback = resultCallback;
+  m_scanRunning = true;
+  m_scanAborted = false;
+
+  int scanResult = yr_rules_scan_file(rules, file.c_str(), 0, yaraScanCallback, this, timeout);
+
+  std::string error;
+  if (scanResult != ERROR_SUCCESS && scanResult) {
+    error = yaraErrorToString(scanResult);
+  }
+
+  m_caller.post(boost::bind(completeCallback, error));
+
+  m_scanRunning = false;
+}
+
 void Scanner::thread()
 {
   /* initialize YARA for this thread */
@@ -76,6 +108,27 @@ void Scanner::thread()
   if (m_yaraInitStatus == ERROR_SUCCESS) {
     yr_finalize();
   }
+}
+
+int Scanner::yaraScanCallback(int message, void* messageData, void* userData)
+{
+  Scanner* scanner = (Scanner*)userData;
+
+  if (message == CALLBACK_MSG_RULE_NOT_MATCHING) {
+    /* this is just to indicate scan progress */
+    scanner->m_caller.post(boost::bind(scanner->m_scanResultCallback, ScannerRule::Ref()));
+  }
+
+  if (message == CALLBACK_MSG_RULE_MATCHING) {
+    ScannerRule::Ref rule = boost::make_shared<ScannerRule>((YR_RULE*)messageData);
+    scanner->m_caller.post(boost::bind(scanner->m_scanResultCallback, rule));
+  }
+
+  if (scanner->m_scanAborted) {
+    return CALLBACK_ABORT;
+  }
+
+  return CALLBACK_CONTINUE;
 }
 
 void Scanner::yaraCompilerCallback(int errorLevel, const char* fileName, int lineNumber, const char* message, void* userData)

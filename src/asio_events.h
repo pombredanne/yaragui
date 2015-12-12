@@ -14,7 +14,7 @@ public:
 
 private slots:
 
-  void tick();
+  void timeout();
 
 private:
 
