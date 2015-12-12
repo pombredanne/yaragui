@@ -23,6 +23,7 @@ set(Sources
   src/asio_events.cpp
   src/main_controller.cpp
   src/scanner.cpp
+  src/scanner_rule.cpp
   src/main_window.cpp
 )
 

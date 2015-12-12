@@ -1,6 +1,7 @@
 #ifndef __SCANNER_H__
 #define __SCANNER_H__
 
+#include "scanner_rule.h"
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 #include <yara/types.h>
