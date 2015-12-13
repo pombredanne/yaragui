@@ -1,15 +1,9 @@
 #include "main_window.h"
-#include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QLineEdit>
-#include <QtWidgets/QFileDialog>
+#include <QFileDialog>
 
 MainWindow::MainWindow()
 {
-  setCentralWidget(new QWidget(this));
-  QVBoxLayout* layout = new QVBoxLayout(centralWidget());
-
-  QLineEdit* edit = new QLineEdit(centralWidget());
-  layout->addWidget(edit);
+  m_ui.setupUi(this);
 
   show();
 }

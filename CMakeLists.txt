@@ -16,7 +16,8 @@ set(AUTOUIC TRUE)
 set(AUTOMOC TRUE)
 set(QT_QMAKE_EXECUTABLE ${QT_ROOT_DIR}/bin/qmake)
 find_package(Qt5Widgets)
-#include(${Qt5Widgets_INCLUDE_DIRS})
+
+include_directories(.)
 
 set(Sources
   src/main.cpp
@@ -30,6 +31,10 @@ set(Sources
 QT5_WRAP_CPP(Sources
   src/asio_events.h
   src/main_window.h
+)
+
+QT5_WRAP_UI(Sources
+  src/ui/main_window.ui
 )
 
 set(Libraries

@@ -6,7 +6,6 @@ MainController::MainController(boost::asio::io_service& io) : m_io(io)
   m_scanner = boost::make_shared<Scanner>(boost::ref(io));
   m_mainWindow = boost::make_shared<MainWindow>();
   m_mainWindow->onRequestScan.connect(boost::bind(&MainController::testScan, this, _1, _2));
-  m_mainWindow->getUserInput();
 }
 
 void MainController::testScan(const std::string& target, const std::string& rules)

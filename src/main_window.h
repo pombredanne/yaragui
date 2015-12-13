@@ -3,6 +3,7 @@
 
 #include <QtWidgets/QMainWindow>
 #include <boost/signals2.hpp>
+#include "ui_main_window.h"
 
 class MainWindow : public QMainWindow
 {
@@ -17,6 +18,8 @@ public:
   void getUserInput();
 
 private:
+
+  Ui::MainWindow m_ui;
 
 };
 
