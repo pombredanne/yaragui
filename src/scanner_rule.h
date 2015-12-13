@@ -1,6 +1,9 @@
 #ifndef __SCANNER_RULE_H__
 #define __SCANNER_RULE_H__
 
+/* this is returned by the Scanner in the scan result callback */
+/* it represents one matching rule in a compiled ruleset */
+
 #include <boost/shared_ptr.hpp>
 #include <yara/types.h>
 #include <vector>

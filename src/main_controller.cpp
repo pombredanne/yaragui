@@ -15,7 +15,7 @@ void MainController::testScan(const std::string& target, const std::string& rule
   m_rules = rules;
 
   std::cout << "Compiling " << rules << "..." << std::endl;
-  m_scanner->compile(rules, "", boost::bind(&MainController::compileCallback, this, _1));
+  m_scanner->rulesCompile(rules, "", boost::bind(&MainController::compileCallback, this, _1));
 }
 
 void MainController::compileCallback(Scanner::CompileResult::Ref result)

@@ -1,6 +1,10 @@
 #ifndef __SCANNER_H__
 #define __SCANNER_H__
 
+/* this is the interface to the YARA engine */
+/* all access to the YARA API happens in a dedicated thread */
+/* the calling thread requests a work operation on the YARA thread using boost::asio */
+
 #include "scanner_rule.h"
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -24,23 +28,39 @@ public:
     std::string compilerMessages;
   };
 
-  typedef boost::function<void (const ScannerRule::Ref rule)> ScanResultCallback;
-  typedef boost::function<void (std::string error)> ScanCompleteCallback;
+  struct LoadResult
+  {
+    typedef boost::shared_ptr<LoadResult> Ref;
+    YR_RULES* rules;
+    std::string error;
+  };
 
-  void compile(const std::string& file, const std::string& ns, boost::function<void (CompileResult::Ref result)> callback);
+  typedef boost::function<void (CompileResult::Ref result)> RulesCompileCallback;
+  typedef boost::function<void (const std::string& error)> RulesSaveCallback;
+  typedef boost::function<void (LoadResult::Ref result)> RulesLoadCallback;
+  typedef boost::function<void (const ScannerRule::Ref rule)> ScanResultCallback;
+  typedef boost::function<void (const std::string& error)> ScanCompleteCallback;
+
+  void rulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback);
+  void rulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
+  void rulesLoad(const std::string& file, RulesLoadCallback callback);
+  void rulesDestroy(YR_RULES* rules);
   bool scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback);
   void scanStop();
 
 private:
 
-  void threadCompile(const std::string& file, const std::string& ns, boost::function<void (CompileResult::Ref result)> callback);
+  void threadRulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback);
+  void threadRulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
+  void threadRulesLoad(const std::string& file, RulesLoadCallback callback);
+  void threadRulesDestroy(YR_RULES* rules);
   void threadScanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback);
   void threadScanStop();
   void thread();
 
   static int yaraScanCallback(int message, void* messageData, void* userData);
   static void yaraCompilerCallback(int errorLevel, const char* fileName, int lineNumber, const char* message, void* userData);
-  std::string yaraErrorToString(const int code) const;
+  static std::string yaraErrorToString(const int code);
 
   boost::asio::io_service& m_caller; /* to post results back to the main thread */
 

@@ -13,9 +13,24 @@ Scanner::Scanner(boost::asio::io_service& caller) : m_caller(caller), m_scanRunn
   m_thread = boost::make_shared<boost::thread>(boost::bind(&Scanner::thread, this));
 }
 
-void Scanner::compile(const std::string& file, const std::string& ns, boost::function<void (CompileResult::Ref result)> callback)
+void Scanner::rulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback)
 {
-  m_io.post(boost::bind(&Scanner::threadCompile, this, file, ns, callback));
+  m_io.post(boost::bind(&Scanner::threadRulesCompile, this, file, ns, callback));
+}
+
+void Scanner::rulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback)
+{
+  m_io.post(boost::bind(&Scanner::threadRulesSave, this, rules, file, callback));
+}
+
+void Scanner::rulesLoad(const std::string& file, RulesLoadCallback callback)
+{
+  m_io.post(boost::bind(&Scanner::threadRulesLoad, this, file, callback));
+}
+
+void Scanner::rulesDestroy(YR_RULES* rules)
+{
+  m_io.post(boost::bind(&Scanner::threadRulesDestroy, this, rules));
 }
 
 bool Scanner::scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
@@ -32,12 +47,18 @@ void Scanner::scanStop()
   m_scanAborted = true;
 }
 
-void Scanner::threadCompile(const std::string& file, const std::string& ns, boost::function<void (CompileResult::Ref result)> callback)
+void Scanner::threadRulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback)
 {
   CompileResult::Ref result = boost::make_shared<CompileResult>();
   result->rules = 0;
   result->file = file;
   result->ns = ns;
+
+  if (m_yaraInitStatus != ERROR_SUCCESS) {
+    result->error = yaraErrorToString(m_yaraInitStatus);
+    m_caller.post(boost::bind(callback, result));
+    return;
+  }
 
   FILE* fd = fopen(file.c_str(), "r");
   if (!fd) {
@@ -75,11 +96,58 @@ void Scanner::threadCompile(const std::string& file, const std::string& ns, boos
     return;
   }
 
-  m_caller.post(boost::bind(callback, result)); /* compile success */
+  m_caller.post(boost::bind(callback, result)); /* success */
+}
+
+void Scanner::threadRulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback)
+{
+  if (m_yaraInitStatus != ERROR_SUCCESS) {
+    m_caller.post(boost::bind(callback, yaraErrorToString(m_yaraInitStatus)));
+    return;
+  }
+
+  int saveResult = yr_rules_save(rules, file.c_str());
+  if (saveResult != ERROR_SUCCESS) {
+    m_caller.post(boost::bind(callback, yaraErrorToString(saveResult)));
+    return;
+  }
+
+  m_caller.post(boost::bind(callback, std::string())); /* success */
+}
+
+void Scanner::threadRulesLoad(const std::string& file, RulesLoadCallback callback)
+{
+  LoadResult::Ref result = boost::make_shared<LoadResult>();
+  result->rules = 0;
+
+  if (m_yaraInitStatus != ERROR_SUCCESS) {
+    result->error = yaraErrorToString(m_yaraInitStatus);
+    m_caller.post(boost::bind(callback, result));
+    return;
+  }
+
+  int loadResult = yr_rules_load(file.c_str(), &result->rules);
+  if (loadResult != ERROR_SUCCESS) {
+    result->rules = 0;
+    result->error = yaraErrorToString(loadResult);
+    m_caller.post(boost::bind(callback, result));
+  }
+
+  m_caller.post(boost::bind(callback, result)); /* success */
+}
+
+void Scanner::threadRulesDestroy(YR_RULES* rules)
+{
+  yr_rules_destroy(rules);
 }
 
 void Scanner::threadScanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
 {
+  if (m_yaraInitStatus != ERROR_SUCCESS) {
+    m_caller.post(boost::bind(completeCallback, yaraErrorToString(m_yaraInitStatus)));
+    return;
+  }
+
   m_scanResultCallback = resultCallback;
   m_scanRunning = true;
   m_scanAborted = false;
@@ -87,7 +155,7 @@ void Scanner::threadScanStart(YR_RULES* rules, const std::string& file, int time
   int scanResult = yr_rules_scan_file(rules, file.c_str(), 0, yaraScanCallback, this, timeout);
 
   std::string error;
-  if (scanResult != ERROR_SUCCESS && scanResult) {
+  if (scanResult != ERROR_SUCCESS) {
     error = yaraErrorToString(scanResult);
   }
 
@@ -139,7 +207,7 @@ void Scanner::yaraCompilerCallback(int errorLevel, const char* fileName, int lin
   result += ss.str();
 }
 
-std::string Scanner::yaraErrorToString(const int code) const
+std::string Scanner::yaraErrorToString(const int code)
 {
   switch (code) {
   case ERROR_SUCCESS:

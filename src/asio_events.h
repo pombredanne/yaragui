@@ -1,6 +1,8 @@
 #ifndef __ASIO_EVENTS_H__
 #define __ASIO_EVENTS_H__
 
+/* allow Qt and boost::asio to work together */
+
 #include <boost/asio.hpp>
 #include <QtCore/QTimer>
 

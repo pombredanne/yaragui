@@ -1,6 +1,8 @@
 #ifndef __MAIN_CONTROLLER_H__
 #define __MAIN_CONTROLLER_H__
 
+/* this class arbitrates scan engine operations on behalf of the GUI */
+
 #include "main_window.h"
 #include "scanner.h"
 #include <boost/asio.hpp>
