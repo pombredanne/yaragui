@@ -2,6 +2,7 @@
 #define __MAIN_WINDOW_H__
 
 #include <QtWidgets/QMainWindow>
+#include "ruleset.h"
 #include <boost/signals2.hpp>
 #include "ui_main_window.h"
 
@@ -14,6 +15,8 @@ public:
   MainWindow();
 
   boost::signals2::signal<void (const std::string& target, const std::string& rules)> onRequestScan;
+
+  void setRules(const std::vector<Ruleset::Ref>& rules);
 
   void getUserInput();
 

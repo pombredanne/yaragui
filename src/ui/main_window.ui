@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>592</width>
-    <height>342</height>
+    <width>549</width>
+    <height>279</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,12 +27,25 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
-          <widget class="QLineEdit" name="targetPath"/>
+          <widget class="QLineEdit" name="targetPath">
+           <property name="placeholderText">
+            <string>Target File</string>
+           </property>
+          </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="targetBrowse">
-           <property name="text">
-            <string>...</string>
+          <widget class="QToolButton" name="targetButton">
+           <property name="minimumSize">
+            <size>
+             <width>75</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="popupMode">
+            <enum>QToolButton::MenuButtonPopup</enum>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonIconOnly</enum>
            </property>
           </widget>
          </item>
@@ -41,23 +54,29 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QLineEdit" name="rulesPath"/>
+          <widget class="QLineEdit" name="rulesPath">
+           <property name="placeholderText">
+            <string>Rule File</string>
+           </property>
+          </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="rulesBrowse">
-           <property name="text">
-            <string>...</string>
+          <widget class="QToolButton" name="ruleButton">
+           <property name="minimumSize">
+            <size>
+             <width>75</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="popupMode">
+            <enum>QToolButton::MenuButtonPopup</enum>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonIconOnly</enum>
            </property>
           </widget>
          </item>
         </layout>
-       </item>
-       <item>
-        <widget class="QProgressBar" name="progress">
-         <property name="value">
-          <number>24</number>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -73,6 +92,7 @@
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <resources/>
  <connections/>

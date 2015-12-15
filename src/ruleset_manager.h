@@ -18,6 +18,10 @@ public:
 
   RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Settings> settings);
 
+  const std::vector<Ruleset::Ref>& getRules() const;
+
+  const Ruleset::Ref createRule(const std::string& file);
+
 private:
 
   boost::asio::io_service& m_io;

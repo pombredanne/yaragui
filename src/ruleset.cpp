@@ -13,6 +13,11 @@ Ruleset::Ruleset(const std::string& file) : m_file(file)
 {
 }
 
+std::string Ruleset::file() const
+{
+  return m_file;
+}
+
 boost::property_tree::ptree Ruleset::serialize() const
 {
   boost::property_tree::ptree properties;

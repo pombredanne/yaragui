@@ -17,6 +17,8 @@ public:
 
   Ruleset(const std::string& file);
 
+  std::string file() const;
+
   boost::property_tree::ptree serialize() const;
 
 private:
