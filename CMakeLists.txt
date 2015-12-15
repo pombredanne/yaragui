@@ -23,6 +23,9 @@ set(Sources
   src/main.cpp
   src/asio_events.cpp
   src/main_controller.cpp
+  src/settings.cpp
+  src/ruleset_manager.cpp
+  src/ruleset.cpp
   src/scanner.cpp
   src/scanner_rule.cpp
   src/main_window.cpp
