@@ -17,10 +17,18 @@ public:
 
 private:
 
+  void handleChangeTarget(const std::string& file);
+  void handleChangeRuleset(RulesetView::Ref ruleset);
+
+  void scan();
+
   boost::asio::io_service& m_io;
   boost::shared_ptr<Settings> m_settings;
   boost::shared_ptr<RulesetManager> m_rm;
   boost::shared_ptr<MainWindow> m_mainWindow;
+
+  std::string m_target;
+  RulesetView::Ref m_ruleset;
 
 };
 

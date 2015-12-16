@@ -54,7 +54,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QLineEdit" name="rulesPath">
+          <widget class="QLineEdit" name="rulePath">
            <property name="placeholderText">
             <string>Rule File</string>
            </property>

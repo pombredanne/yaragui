@@ -26,6 +26,7 @@ set(Sources
   src/settings.cpp
   src/ruleset_manager.cpp
   src/ruleset.cpp
+  src/ruleset_view.cpp
   src/scanner.cpp
   src/scanner_rule.cpp
   src/main_window.cpp
