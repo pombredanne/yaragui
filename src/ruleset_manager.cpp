@@ -13,30 +13,11 @@ RulesetManager::RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Se
   m_rules = m_settings->getRules();
 }
 
-void RulesetManager::setTarget(const std::string& file)
+void RulesetManager::scan(const std::string& target, RulesetView::Ref view)
 {
-  m_activeTargets.clear();
-  m_activeTargets.push_back(file);
-}
-
-void RulesetManager::setTargetDirectory(const std::string& path)
-{
-  m_activeTargets.clear();
-  QDir dir(path.c_str());
-  QStringList files = dir.entryList();
-  for (size_t i = 0; i < files.size(); ++i) {
-    m_activeTargets.push_back(files[i].toStdString());
-  }
-}
-
-void RulesetManager::setRuleset(const Ruleset::Ref ruleset)
-{
-  m_activeRules.clear();
-  if (ruleset) {
-    m_activeRules.push_back(ruleset);
-  } else { /* scan using all loaded rules */
-    m_activeRules = std::list<Ruleset::Ref>(m_rules.begin(), m_rules.end());
-  }
+  m_target = target;
+  Ruleset::Ref ruleset = viewToRule(view);
+  m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleCompile, this, _1));
 }
 
 std::vector<RulesetView::Ref> RulesetManager::getRules() const
@@ -55,4 +36,35 @@ void RulesetManager::createRule(const std::string& file)
   m_rules.push_back(ruleset);
   m_settings->setRules(m_rules);
   m_settings->saveToDisk();
+}
+
+void RulesetManager::handleCompile(Scanner::CompileResult::Ref compileResult)
+{
+  m_compileResult = compileResult;
+  m_scanner->scanStart(m_compileResult->rules, m_target, 0,
+    boost::bind(&RulesetManager::handleScanResult, this, _1),
+    boost::bind(&RulesetManager::handleScanComplete, this, _1));
+}
+
+void RulesetManager::handleScanResult(ScannerRule::Ref rule)
+{
+  if (rule) {
+    onScanResult(m_target, rule);
+  }
+}
+
+void RulesetManager::handleScanComplete(const std::string& error)
+{
+  onScanComplete(error);
+}
+
+Ruleset::Ref RulesetManager::viewToRule(RulesetView::Ref view)
+{
+  /* the filename is the key. could use a map here */
+  BOOST_FOREACH(Ruleset::Ref ruleset, m_rules) {
+    if (ruleset->file() == view->file()) {
+      return ruleset;
+    }
+  }
+  return boost::make_shared<Ruleset>(view->file());
 }

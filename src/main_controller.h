@@ -20,6 +20,8 @@ private:
   void handleChangeTarget(const std::string& file);
   void handleChangeRuleset(RulesetView::Ref ruleset);
 
+  void handleScanResult(const std::string& target, ScannerRule::Ref rule);
+
   void scan();
 
   boost::asio::io_service& m_io;

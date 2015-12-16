@@ -8,6 +8,7 @@
 #include "scanner.h"
 #include "settings.h"
 #include <boost/asio.hpp>
+#include <boost/signals2.hpp>
 #include <vector>
 
 class RulesetManager
@@ -17,14 +18,21 @@ public:
   ~RulesetManager();
   RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Settings> settings);
 
-  void setTarget(const std::string& file);
-  void setTargetDirectory(const std::string& path);
-  void setRuleset(const Ruleset::Ref ruleset);
+  boost::signals2::signal<void (const std::string& target, ScannerRule::Ref rule)> onScanResult;
+  boost::signals2::signal<void (const std::string& error)> onScanComplete;
+
+  void scan(const std::string& target, RulesetView::Ref view);
 
   std::vector<RulesetView::Ref> getRules() const;
   void createRule(const std::string& file);
 
 private:
+
+  void handleCompile(Scanner::CompileResult::Ref compileResult);
+  void handleScanResult(ScannerRule::Ref rule);
+  void handleScanComplete(const std::string& error);
+
+  Ruleset::Ref viewToRule(RulesetView::Ref view);
 
   boost::asio::io_service& m_io;
 
@@ -33,8 +41,8 @@ private:
 
   std::vector<Ruleset::Ref> m_rules;
 
-  std::list<std::string> m_activeTargets;
-  std::list<Ruleset::Ref> m_activeRules;
+  std::string m_target;
+  Scanner::CompileResult::Ref m_compileResult;
 
 };
 

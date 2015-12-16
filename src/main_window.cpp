@@ -59,6 +59,13 @@ void MainWindow::setRules(const std::vector<RulesetView::Ref>& rules)
   menu->addAction("&Configure");
 }
 
+void MainWindow::addScanResult(const std::string& target, ScannerRule::Ref rule)
+{
+  QTreeWidgetItem* item = new QTreeWidgetItem(m_ui.tree);
+  item->setText(0, rule->identifier.c_str());
+  m_ui.tree->insertTopLevelItem(0, item);
+}
+
 void MainWindow::handleSelectRuleAllFromMenu()
 {
   /* null pointer means scan with every rule */
@@ -81,6 +88,7 @@ void MainWindow::handleTargetDirectoryBrowse()
 {
   QString dir = QFileDialog::getExistingDirectory(this, "Select Target Directory");
   m_ui.targetPath->setText(dir);
+  onChangeTarget(dir.toStdString());
 }
 
 void MainWindow::handleRuleFileBrowse()

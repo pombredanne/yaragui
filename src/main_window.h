@@ -3,6 +3,7 @@
 
 #include <QtWidgets/QMainWindow>
 #include "ruleset_view.h"
+#include "scanner_rule.h"
 #include "ui_main_window.h"
 #include <boost/signals2.hpp>
 #include <QSignalMapper>
@@ -19,6 +20,7 @@ public:
   boost::signals2::signal<void (RulesetView::Ref ruleset)> onChangeRuleset;
 
   void setRules(const std::vector<RulesetView::Ref>& rules);
+  void addScanResult(const std::string& target, ScannerRule::Ref rule);
 
 public slots:
 

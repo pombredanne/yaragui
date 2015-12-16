@@ -28,6 +28,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QLineEdit" name="targetPath">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
            <property name="placeholderText">
             <string>Target File</string>
            </property>
@@ -55,6 +58,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QLineEdit" name="rulePath">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
            <property name="placeholderText">
             <string>Rule File</string>
            </property>
