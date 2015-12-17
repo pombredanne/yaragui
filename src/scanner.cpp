@@ -28,9 +28,9 @@ void Scanner::rulesLoad(const std::string& file, RulesLoadCallback callback)
   m_io.post(boost::bind(&Scanner::threadRulesLoad, this, file, callback));
 }
 
-void Scanner::rulesDestroy(YR_RULES* rules)
+void Scanner::rulesDestroy(YR_RULES* rules, RulesDestroyCallback callback)
 {
-  m_io.post(boost::bind(&Scanner::threadRulesDestroy, this, rules));
+  m_io.post(boost::bind(&Scanner::threadRulesDestroy, this, rules, callback));
 }
 
 void Scanner::scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
@@ -134,9 +134,10 @@ void Scanner::threadRulesLoad(const std::string& file, RulesLoadCallback callbac
   m_caller.post(boost::bind(callback, result)); /* success */
 }
 
-void Scanner::threadRulesDestroy(YR_RULES* rules)
+void Scanner::threadRulesDestroy(YR_RULES* rules, RulesDestroyCallback callback)
 {
   yr_rules_destroy(rules);
+  m_caller.post(callback);
 }
 
 void Scanner::threadScanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)

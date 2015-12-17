@@ -6,6 +6,7 @@
 
 RulesetManager::~RulesetManager()
 {
+  /* todo: deffered shutdown. go into cleanup loop */
 }
 
 RulesetManager::RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Settings> settings) : m_io(io), m_settings(settings)
@@ -60,6 +61,14 @@ void RulesetManager::handleScanResult(ScannerRule::Ref rule)
 
 void RulesetManager::handleScanComplete(const std::string& error)
 {
+  m_queueRules.pop_front();
+  if (m_queueRules.empty()) {
+    m_queueTargets.pop_front();
+    if (m_queueTargets.empty()) {
+      onScanComplete(std::string());
+      return;
+    }
+  }
   scanWithCompiledRules();
 }
 
@@ -75,16 +84,12 @@ void RulesetManager::compileNextRule()
 
 void RulesetManager::scanWithCompiledRules()
 {
-  if (m_queueTargets.empty()) {
-    onScanComplete(std::string());
-    return;
-  }
-
   const std::string target = *m_queueTargets.begin();
   QFileInfo fileInfo(target.c_str());
   if (fileInfo.isDir()) {
+    m_queueTargets.pop_front();
     QDir dir(target.c_str());
-    QStringList files = dir.entryList();
+    QStringList files = dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
     for (int i = 0; i < files.size(); ++i) {
       int j = files.size() - i - 1;
       m_queueTargets.push_front(files[j].toStdString());
@@ -93,7 +98,7 @@ void RulesetManager::scanWithCompiledRules()
     return;
   }
 
-  if (!m_queueRules.empty()) {
+  if (m_queueRules.empty()) {
     m_queueRules = ruleToQueue(m_activeRule); /* reload the queue for scanning */
   }
 

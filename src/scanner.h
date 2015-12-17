@@ -38,13 +38,14 @@ public:
   typedef boost::function<void (CompileResult::Ref result)> RulesCompileCallback;
   typedef boost::function<void (const std::string& error)> RulesSaveCallback;
   typedef boost::function<void (LoadResult::Ref result)> RulesLoadCallback;
+  typedef boost::function<void ()> RulesDestroyCallback;
   typedef boost::function<void (const ScannerRule::Ref rule)> ScanResultCallback;
   typedef boost::function<void (const std::string& error)> ScanCompleteCallback;
 
   void rulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback);
   void rulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
   void rulesLoad(const std::string& file, RulesLoadCallback callback);
-  void rulesDestroy(YR_RULES* rules);
+  void rulesDestroy(YR_RULES* rules, RulesDestroyCallback callback);
   void scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback);
   void scanStop();
 
@@ -53,7 +54,7 @@ private:
   void threadRulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback);
   void threadRulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
   void threadRulesLoad(const std::string& file, RulesLoadCallback callback);
-  void threadRulesDestroy(YR_RULES* rules);
+  void threadRulesDestroy(YR_RULES* rules, RulesDestroyCallback callback);
   void threadScanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback);
   void threadScanStop();
   void thread();
