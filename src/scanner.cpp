@@ -33,13 +33,11 @@ void Scanner::rulesDestroy(YR_RULES* rules)
   m_io.post(boost::bind(&Scanner::threadRulesDestroy, this, rules));
 }
 
-bool Scanner::scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
+void Scanner::scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback)
 {
-  if (m_scanRunning) {
-    return false;
+  if (!m_scanRunning) {
+    m_io.post(boost::bind(&Scanner::threadScanStart, this, rules, file, timeout, resultCallback, completeCallback));
   }
-  m_io.post(boost::bind(&Scanner::threadScanStart, this, rules, file, timeout, resultCallback, completeCallback));
-  return true;
 }
 
 void Scanner::scanStop()

@@ -10,6 +10,7 @@
 #include <boost/asio.hpp>
 #include <boost/signals2.hpp>
 #include <vector>
+#include <list>
 
 class RulesetManager
 {
@@ -32,17 +33,21 @@ private:
   void handleScanResult(ScannerRule::Ref rule);
   void handleScanComplete(const std::string& error);
 
+  void compileNextRule();
+  void scanWithCompiledRules();
+  std::list<Ruleset::Ref> ruleToQueue(Ruleset::Ref rule);
   Ruleset::Ref viewToRule(RulesetView::Ref view);
 
   boost::asio::io_service& m_io;
-
   boost::shared_ptr<Scanner> m_scanner;
   boost::shared_ptr<Settings> m_settings;
 
   std::vector<Ruleset::Ref> m_rules;
+  std::map<std::string, YR_RULES*> m_binaries;
 
-  std::string m_target;
-  Scanner::CompileResult::Ref m_compileResult;
+  Ruleset::Ref m_activeRule;
+  std::list<std::string> m_queueTargets;
+  std::list<Ruleset::Ref> m_queueRules;
 
 };
 

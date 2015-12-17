@@ -2,6 +2,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/foreach.hpp>
 #include <QtCore/QDir>
+#include <QtCore/QFileInfo>
 
 RulesetManager::~RulesetManager()
 {
@@ -15,9 +16,14 @@ RulesetManager::RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Se
 
 void RulesetManager::scan(const std::string& target, RulesetView::Ref view)
 {
-  m_target = target;
-  Ruleset::Ref ruleset = viewToRule(view);
-  m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleCompile, this, _1));
+  m_queueTargets.clear();
+  m_queueTargets.push_back(target);
+
+  m_activeRule = viewToRule(view);
+  m_queueRules = ruleToQueue(m_activeRule); /* reload the queue for compiling */
+
+  m_binaries.clear();
+  compileNextRule();
 }
 
 std::vector<RulesetView::Ref> RulesetManager::getRules() const
@@ -40,31 +46,85 @@ void RulesetManager::createRule(const std::string& file)
 
 void RulesetManager::handleCompile(Scanner::CompileResult::Ref compileResult)
 {
-  m_compileResult = compileResult;
-  m_scanner->scanStart(m_compileResult->rules, m_target, 0,
-    boost::bind(&RulesetManager::handleScanResult, this, _1),
-    boost::bind(&RulesetManager::handleScanComplete, this, _1));
+  m_binaries[compileResult->file] = compileResult->rules;
+  m_queueRules.pop_front();
+  compileNextRule();
 }
 
 void RulesetManager::handleScanResult(ScannerRule::Ref rule)
 {
   if (rule) {
-    onScanResult(m_target, rule);
+    onScanResult(m_queueTargets.front(), rule);
   }
 }
 
 void RulesetManager::handleScanComplete(const std::string& error)
 {
-  onScanComplete(error);
+  scanWithCompiledRules();
+}
+
+void RulesetManager::compileNextRule()
+{
+  if (m_queueRules.empty()) {
+    scanWithCompiledRules();
+    return;
+  }
+  Ruleset::Ref ruleset = m_queueRules.front();
+  m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleCompile, this, _1));
+}
+
+void RulesetManager::scanWithCompiledRules()
+{
+  if (m_queueTargets.empty()) {
+    onScanComplete(std::string());
+    return;
+  }
+
+  const std::string target = *m_queueTargets.begin();
+  QFileInfo fileInfo(target.c_str());
+  if (fileInfo.isDir()) {
+    QDir dir(target.c_str());
+    QStringList files = dir.entryList();
+    for (int i = 0; i < files.size(); ++i) {
+      int j = files.size() - i - 1;
+      m_queueTargets.push_front(files[j].toStdString());
+    }
+    m_io.post(boost::bind(&RulesetManager::scanWithCompiledRules, this));
+    return;
+  }
+
+  if (!m_queueRules.empty()) {
+    m_queueRules = ruleToQueue(m_activeRule); /* reload the queue for scanning */
+  }
+
+  YR_RULES* rules = m_binaries[m_queueRules.front()->file()];
+  m_scanner->scanStart(rules, target, 0,
+    boost::bind(&RulesetManager::handleScanResult, this, _1),
+    boost::bind(&RulesetManager::handleScanComplete, this, _1));
+}
+
+std::list<Ruleset::Ref> RulesetManager::ruleToQueue(Ruleset::Ref rule)
+{
+  std::list<Ruleset::Ref> rules;
+  if (!rule) { /* scanning with all rules */
+    rules = std::list<Ruleset::Ref>(m_rules.begin(), m_rules.end());
+  } else { /* scanning with a single rule */
+    rules.push_back(m_activeRule);
+  }
+  return rules;
 }
 
 Ruleset::Ref RulesetManager::viewToRule(RulesetView::Ref view)
 {
+  if (!view) { /* mean all rules */
+    return Ruleset::Ref();
+  }
   /* the filename is the key. could use a map here */
   BOOST_FOREACH(Ruleset::Ref ruleset, m_rules) {
     if (ruleset->file() == view->file()) {
       return ruleset;
     }
   }
+  /* a temporary file */
   return boost::make_shared<Ruleset>(view->file());
 }

@@ -45,7 +45,7 @@ public:
   void rulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
   void rulesLoad(const std::string& file, RulesLoadCallback callback);
   void rulesDestroy(YR_RULES* rules);
-  bool scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback);
+  void scanStart(YR_RULES* rules, const std::string& file, int timeout, ScanResultCallback resultCallback, ScanCompleteCallback completeCallback);
   void scanStop();
 
 private:
