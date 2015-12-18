@@ -6,7 +6,6 @@
 
 RulesetManager::~RulesetManager()
 {
-  /* todo: deffered shutdown. go into cleanup loop */
 }
 
 RulesetManager::RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Settings> settings) : m_io(io), m_settings(settings)
@@ -65,7 +64,7 @@ void RulesetManager::handleScanComplete(const std::string& error)
   if (m_queueRules.empty()) {
     m_queueTargets.pop_front();
     if (m_queueTargets.empty()) {
-      onScanComplete(std::string());
+      freeBinaries(); /* cleanup before signaling completed */
       return;
     }
   }
@@ -92,10 +91,9 @@ void RulesetManager::scanWithCompiledRules()
     QStringList files = dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
     for (int i = 0; i < files.size(); ++i) {
       int j = files.size() - i - 1;
-      m_queueTargets.push_front(files[j].toStdString());
+      QString fullPath = dir.absoluteFilePath(files[j]);
+      m_queueTargets.push_front(fullPath.toStdString());
     }
-    m_io.post(boost::bind(&RulesetManager::scanWithCompiledRules, this));
-    return;
   }
 
   if (m_queueRules.empty()) {
@@ -103,9 +101,26 @@ void RulesetManager::scanWithCompiledRules()
   }
 
   YR_RULES* rules = m_binaries[m_queueRules.front()->file()];
+
+  if (!rules) {
+    handleScanComplete(std::string());
+    return;
+  }
+
   m_scanner->scanStart(rules, target, 0,
     boost::bind(&RulesetManager::handleScanResult, this, _1),
     boost::bind(&RulesetManager::handleScanComplete, this, _1));
+}
+
+void RulesetManager::freeBinaries()
+{
+  if (m_binaries.empty()) {
+    onScanComplete(std::string());
+  } else {
+    YR_RULES* rules = m_binaries.begin()->second;
+    m_binaries.erase(m_binaries.begin()->first);
+    m_scanner->rulesDestroy(rules, boost::bind(&RulesetManager::freeBinaries, this));
+  }
 }
 
 std::list<Ruleset::Ref> RulesetManager::ruleToQueue(Ruleset::Ref rule)
@@ -121,7 +136,7 @@ std::list<Ruleset::Ref> RulesetManager::ruleToQueue(Ruleset::Ref rule)
 
 Ruleset::Ref RulesetManager::viewToRule(RulesetView::Ref view)
 {
-  if (!view) { /* mean all rules */
+  if (!view) { /* means all rules */
     return Ruleset::Ref();
   }
   /* the filename is the key. could use a map here */

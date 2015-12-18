@@ -35,6 +35,8 @@ private:
 
   void compileNextRule();
   void scanWithCompiledRules();
+  void freeBinaries();
+
   std::list<Ruleset::Ref> ruleToQueue(Ruleset::Ref rule);
   Ruleset::Ref viewToRule(RulesetView::Ref view);
 
