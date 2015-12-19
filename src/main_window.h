@@ -18,6 +18,8 @@ public:
 
   boost::signals2::signal<void (const std::string& file)> onChangeTarget;
   boost::signals2::signal<void (RulesetView::Ref ruleset)> onChangeRuleset;
+  boost::signals2::signal<void ()> onRequestRuleWindowOpen;
+  boost::signals2::signal<void ()> onRequestAboutWindowOpen;
 
   void setRules(const std::vector<RulesetView::Ref>& rules);
   void addScanResult(const std::string& target, ScannerRule::Ref rule);
@@ -29,6 +31,8 @@ public slots:
   void handleTargetFileBrowse();
   void handleTargetDirectoryBrowse();
   void handleRuleFileBrowse();
+  void handleEditRulesMenu();
+  void handleAboutMenu();
 
 private:
 

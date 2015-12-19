@@ -15,7 +15,8 @@ MainWindow::MainWindow()
   connect(scanDirectory, SIGNAL(triggered()), this, SLOT(handleTargetDirectoryBrowse()));
 
   menu->addSeparator();
-  menu->addAction("&About");
+  QAction* about = menu->addAction("&About");
+  connect(about, SIGNAL(triggered()), this, SLOT(handleAboutMenu()));
 
   m_ui.targetButton->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
   m_ui.ruleButton->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
@@ -35,6 +36,10 @@ void MainWindow::setRules(const std::vector<RulesetView::Ref>& rules)
 
   QAction* allRules = menu->addAction("&All Rules");
   connect(allRules, SIGNAL(triggered()), this, SLOT(handleSelectRuleAllFromMenu()));
+
+  if (rules.empty()) {
+    allRules->setEnabled(false);
+  }
 
   menu->addSeparator();
 
@@ -56,7 +61,8 @@ void MainWindow::setRules(const std::vector<RulesetView::Ref>& rules)
     menu->addSeparator();
   }
 
-  menu->addAction("&Configure");
+  QAction* configure = menu->addAction("&Configure");
+  connect(configure, SIGNAL(triggered()), this, SLOT(handleEditRulesMenu()));
 }
 
 void MainWindow::addScanResult(const std::string& target, ScannerRule::Ref rule)
@@ -96,4 +102,14 @@ void MainWindow::handleRuleFileBrowse()
   QString file = QFileDialog::getOpenFileName(this, "Select Rule File", QString(), "YARA Rules (*.yara *.yar)");
   m_ui.rulePath->setText(file);
   onChangeRuleset(boost::make_shared<RulesetView>(file.toStdString()));
+}
+
+void MainWindow::handleEditRulesMenu()
+{
+  onRequestRuleWindowOpen();
+}
+
+void MainWindow::handleAboutMenu()
+{
+  onRequestAboutWindowOpen();
 }

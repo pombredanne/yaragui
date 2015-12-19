@@ -4,6 +4,8 @@
 /* this class arbitrates scan engine operations on behalf of the GUI */
 
 #include "main_window.h"
+#include "rule_window.h"
+#include "about_window.h"
 #include "settings.h"
 #include "ruleset_manager.h"
 #include <boost/asio.hpp>
@@ -22,12 +24,17 @@ private:
 
   void handleScanResult(const std::string& target, ScannerRule::Ref rule);
 
+  void handleRequestRuleWindowOpen();
+  void handleAboutWindowOpen();
+
   void scan();
 
   boost::asio::io_service& m_io;
   boost::shared_ptr<Settings> m_settings;
   boost::shared_ptr<RulesetManager> m_rm;
   boost::shared_ptr<MainWindow> m_mainWindow;
+  boost::shared_ptr<RuleWindow> m_ruleWindow;
+  boost::shared_ptr<AboutWindow> m_aboutWindow;
 
   std::string m_target;
   RulesetView::Ref m_ruleset;
