@@ -1,6 +1,8 @@
 #include "scanner.h"
 #include <yara.h>
 #include <sstream>
+#include <fstream>
+#include <QtCore/QCryptographicHash>
 
 Scanner::~Scanner()
 {
@@ -11,6 +13,11 @@ Scanner::~Scanner()
 Scanner::Scanner(boost::asio::io_service& caller) : m_caller(caller), m_scanRunning(false), m_scanAborted(false)
 {
   m_thread = boost::make_shared<boost::thread>(boost::bind(&Scanner::thread, this));
+}
+
+void Scanner::rulesHash(const std::string& file, RulesHashCallback callback)
+{
+  m_io.post(boost::bind(&Scanner::threadRulesHash, this, file, callback));
 }
 
 void Scanner::rulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback)
@@ -45,10 +52,35 @@ void Scanner::scanStop()
   m_scanAborted = true;
 }
 
+void Scanner::threadRulesHash(const std::string& file, RulesHashCallback callback)
+{
+  std::ifstream input(file.c_str(), std::ifstream::binary);
+  if (!input.is_open()) {
+    m_io.post(boost::bind(callback, std::string()));
+    return;
+  }
+
+  QCryptographicHash hash(QCryptographicHash::Md5);
+  std::vector<char> buffer(50 * 1024);
+  while (!input.eof()) {
+    input.read(&buffer[0], buffer.size());
+    if (input.bad()) {
+      m_io.post(boost::bind(callback, std::string()));
+      return;
+    }
+    hash.addData(&buffer[0], input.gcount());
+  }
+
+  QByteArray hashBytes = hash.result().toHex();
+  std::string hashString(hashBytes.constData(), hashBytes.length());
+  m_io.post(boost::bind(callback, hashString));
+}
+
 void Scanner::threadRulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback)
 {
   CompileResult::Ref result = boost::make_shared<CompileResult>();
   result->rules = 0;
+  result->ruleCount = 0;
   result->file = file;
   result->ns = ns;
 
@@ -92,6 +124,11 @@ void Scanner::threadRulesCompile(const std::string& file, const std::string& ns,
     result->error = "Failed to compile rules: " + yaraErrorToString(createResult);
     m_caller.post(boost::bind(callback, result));
     return;
+  }
+
+  YR_RULE* rule = 0;
+  yr_rules_foreach(result->rules, rule) {
+    result->ruleCount++;
   }
 
   m_caller.post(boost::bind(callback, result)); /* success */

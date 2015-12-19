@@ -50,4 +50,5 @@ void Settings::setRules(const std::vector<Ruleset::Ref>& rules)
     tree.add_child("rule", ruleset->serialize());
   }
   m_tree.put_child("rules", tree);
+  saveToDisk();
 }

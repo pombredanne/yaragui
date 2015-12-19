@@ -21,11 +21,12 @@ public:
   struct CompileResult
   {
     typedef boost::shared_ptr<CompileResult> Ref;
-    YR_RULES* rules; /* do not access this from anywhere but the Scanner thread */
     std::string file;
     std::string ns;
     std::string error;
     std::string compilerMessages;
+    YR_RULES* rules; /* do not access this from anywhere but the Scanner thread */
+    int ruleCount;
   };
 
   struct LoadResult
@@ -35,6 +36,7 @@ public:
     std::string error;
   };
 
+  typedef boost::function<void (const std::string& hash)> RulesHashCallback;
   typedef boost::function<void (CompileResult::Ref result)> RulesCompileCallback;
   typedef boost::function<void (const std::string& error)> RulesSaveCallback;
   typedef boost::function<void (LoadResult::Ref result)> RulesLoadCallback;
@@ -42,6 +44,7 @@ public:
   typedef boost::function<void (const ScannerRule::Ref rule)> ScanResultCallback;
   typedef boost::function<void (const std::string& error)> ScanCompleteCallback;
 
+  void rulesHash(const std::string& file, RulesHashCallback callback);
   void rulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback);
   void rulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
   void rulesLoad(const std::string& file, RulesLoadCallback callback);
@@ -51,6 +54,7 @@ public:
 
 private:
 
+  void threadRulesHash(const std::string& file, RulesHashCallback callback);
   void threadRulesCompile(const std::string& file, const std::string& ns, RulesCompileCallback callback);
   void threadRulesSave(YR_RULES* rules, const std::string& file, RulesSaveCallback callback);
   void threadRulesLoad(const std::string& file, RulesLoadCallback callback);

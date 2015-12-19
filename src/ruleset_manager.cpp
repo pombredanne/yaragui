@@ -41,7 +41,6 @@ void RulesetManager::createRule(const std::string& file)
   Ruleset::Ref ruleset = boost::make_shared<Ruleset>(file);
   m_rules.push_back(ruleset);
   m_settings->setRules(m_rules);
-  m_settings->saveToDisk();
 }
 
 void RulesetManager::handleCompile(Scanner::CompileResult::Ref compileResult)
@@ -102,11 +101,6 @@ void RulesetManager::scanWithCompiledRules()
   }
 
   YR_RULES* rules = m_binaries[m_queueRules.front()->file()];
-
-  if (!rules) {
-    handleScanComplete(std::string());
-    return;
-  }
 
   m_scanner->scanStart(rules, target, 0,
     boost::bind(&RulesetManager::handleScanResult, this, _1),
