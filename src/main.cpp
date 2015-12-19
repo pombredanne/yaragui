@@ -1,6 +1,6 @@
 #include "main_controller.h"
 #include "asio_events.h"
-#include <QApplication>
+#include <QtWidgets/QApplication>
 
 int main(int argc, char* argv[])
 {

@@ -6,7 +6,8 @@
 #include "scanner_rule.h"
 #include "ui_main_window.h"
 #include <boost/signals2.hpp>
-#include <QSignalMapper>
+#include <QtCore/QSignalMapper>
+#include <QtWidgets/QFileIconProvider>
 
 class MainWindow : public QMainWindow
 {
@@ -39,7 +40,11 @@ private:
   Ui::MainWindow m_ui;
   QSignalMapper* m_signalMapper;
 
+  QFileIconProvider m_iconProvider;
+
   std::vector<RulesetView::Ref> m_rules;
+
+  std::map<std::string, QTreeWidgetItem*> m_treeItems;
 
 };
 

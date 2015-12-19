@@ -2,7 +2,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
-#include <QApplication>
+#include <QtWidgets/QApplication>
 #include <QtCore/QDir>
 
 Settings::~Settings()

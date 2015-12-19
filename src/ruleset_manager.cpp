@@ -62,6 +62,7 @@ void RulesetManager::handleScanComplete(const std::string& error)
 {
   m_queueRules.pop_front();
   if (m_queueRules.empty()) {
+    onScanResult(m_queueTargets.front(), ScannerRule::Ref());
     m_queueTargets.pop_front();
     if (m_queueTargets.empty()) {
       freeBinaries(); /* cleanup before signaling completed */
