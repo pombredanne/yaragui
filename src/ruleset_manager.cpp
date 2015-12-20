@@ -44,6 +44,17 @@ Ruleset::Ref RulesetManager::createRule(const std::string& file)
   return ruleset;
 }
 
+void RulesetManager::updateRules(const std::vector<RulesetView::Ref>& rules)
+{
+  /* called when the user clicks save/apply in the rule window */
+  BOOST_FOREACH(RulesetView::Ref view, rules) {
+    Ruleset::Ref rule = viewToRule(view);
+    rule->setName(view->name()); /* this is the only property that can be edited at present */
+  }
+  m_settings->setRules(m_rules);
+  onRulesUpdated();
+}
+
 void RulesetManager::handleRuleCompile(Scanner::CompileResult::Ref compileResult)
 {
   Ruleset::Ref ruleset = m_queueRules.front();

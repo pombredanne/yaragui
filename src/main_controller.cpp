@@ -7,6 +7,7 @@ MainController::MainController(int argc, char* argv[], boost::asio::io_service& 
 
   m_rm = boost::make_shared<RulesetManager>(boost::ref(io), m_settings);
   m_rm->onScanResult.connect(boost::bind(&MainController::handleScanResult, this, _1, _2));
+  m_rm->onRulesUpdated.connect(boost::bind(&MainController::handleRulesUpdated, this));
 
   m_mainWindow = boost::make_shared<MainWindow>();
   m_mainWindow->onChangeTarget.connect(boost::bind(&MainController::handleChangeTarget, this, _1));
@@ -34,6 +35,11 @@ void MainController::handleScanResult(const std::string& target, ScannerRule::Re
   m_mainWindow->addScanResult(target, rule);
 }
 
+void MainController::handleRulesUpdated()
+{
+  m_mainWindow->setRules(m_rm->getRules());
+}
+
 void MainController::handleRequestRuleWindowOpen()
 {
   if (m_ruleWindow && m_ruleWindow->isVisible()) {
@@ -41,7 +47,13 @@ void MainController::handleRequestRuleWindowOpen()
   }
 
   m_ruleWindow = boost::make_shared<RuleWindow>();
+  m_ruleWindow->onSaveRules.connect(boost::bind(&MainController::handleRuleWindowSave, this, _1));
   m_ruleWindow->setRules(m_rm->getRules());
+}
+
+void MainController::handleRuleWindowSave(const std::vector<RulesetView::Ref>& rules)
+{
+  m_rm->updateRules(rules);
 }
 
 void MainController::handleAboutWindowOpen()

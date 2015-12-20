@@ -23,8 +23,11 @@ private:
   void handleChangeRuleset(RulesetView::Ref ruleset);
 
   void handleScanResult(const std::string& target, ScannerRule::Ref rule);
+  void handleRulesUpdated();
 
   void handleRequestRuleWindowOpen();
+  void handleRuleWindowSave(const std::vector<RulesetView::Ref>& rules);
+
   void handleAboutWindowOpen();
 
   void scan();

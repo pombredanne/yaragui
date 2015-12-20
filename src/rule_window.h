@@ -3,6 +3,7 @@
 
 #include "ui_rule_window.h"
 #include "ruleset_view.h"
+#include <boost/signals2.hpp>
 
 class RuleWindow : public QMainWindow
 {
@@ -12,9 +13,14 @@ public:
 
   RuleWindow();
 
+  boost::signals2::signal<void (const std::vector<RulesetView::Ref>& rules)> onSaveRules;
+
   void setRules(const std::vector<RulesetView::Ref>& rules);
 
 private slots:
+
+  void handleButtonClicked(QAbstractButton* button);
+  void handleItemEdit(QTableWidgetItem* item);
 
 private:
 
