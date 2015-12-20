@@ -1,10 +1,9 @@
 #ifndef __MAIN_WINDOW_H__
 #define __MAIN_WINDOW_H__
 
-#include <QtWidgets/QMainWindow>
+#include "ui_main_window.h"
 #include "ruleset_view.h"
 #include "scanner_rule.h"
-#include "ui_main_window.h"
 #include <boost/signals2.hpp>
 #include <QtCore/QSignalMapper>
 #include <QtWidgets/QFileIconProvider>

@@ -41,6 +41,7 @@ void MainController::handleRequestRuleWindowOpen()
   }
 
   m_ruleWindow = boost::make_shared<RuleWindow>();
+  m_ruleWindow->setRules(m_rm->getRules());
 }
 
 void MainController::handleAboutWindowOpen()
