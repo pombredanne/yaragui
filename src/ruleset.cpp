@@ -41,9 +41,19 @@ void Ruleset::setHash(const std::string& hash)
   m_hash = hash;
 }
 
+std::string Ruleset::compilerMessages() const
+{
+  return m_compilerMessages;
+}
+
+void Ruleset::setCompilerMessages(const std::string& compilerMessages)
+{
+  m_compilerMessages = compilerMessages;
+}
+
 boost::shared_ptr<RulesetView> Ruleset::view() const
 {
-  return boost::make_shared<RulesetView>(m_file, m_name, !m_hash.empty());
+  return boost::make_shared<RulesetView>(m_file, m_name, !m_hash.empty(), m_compilerMessages);
 }
 
 boost::property_tree::ptree Ruleset::serialize() const

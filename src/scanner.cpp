@@ -245,7 +245,7 @@ int Scanner::yaraScanCallback(int message, void* messageData, void* userData)
 
 void Scanner::yaraCompilerCallback(int errorLevel, const char* fileName, int lineNumber, const char* message, void* userData)
 {
-  std::string& result = *(std::string*)&userData;
+  std::string& result = *(std::string*)userData;
   std::stringstream ss;
   ss << fileName << "(" << lineNumber << "): error: " << message << std::endl;
   result += ss.str();

@@ -1,7 +1,7 @@
 #include "main_controller.h"
 #include <boost/make_shared.hpp>
 
-MainController::MainController(int argc, char* argv[], boost::asio::io_service& io) : m_io(io)
+MainController::MainController(int argc, char* argv[], boost::asio::io_service& io) : m_io(io), m_haveRuleset(false)
 {
   m_settings = boost::make_shared<Settings>();
 
@@ -27,6 +27,7 @@ void MainController::handleChangeTarget(const std::string& file)
 void MainController::handleChangeRuleset(RulesetView::Ref ruleset)
 {
   m_ruleset = ruleset;
+  m_haveRuleset = true;
   scan();
 }
 
@@ -67,7 +68,7 @@ void MainController::handleAboutWindowOpen()
 
 void MainController::scan()
 {
-  if (!m_target.empty() && m_ruleset) {
+  if (!m_target.empty() && m_haveRuleset) {
     m_rm->scan(m_target, m_ruleset);
   }
 }

@@ -11,11 +11,12 @@ public:
   typedef boost::shared_ptr<RulesetView> Ref;
 
   RulesetView(const std::string& file);
-  RulesetView(const std::string& file, const std::string& name, bool compiled);
+  RulesetView(const std::string& file, const std::string& name, bool compiled, const std::string& compilerMessages);
 
   std::string file() const;
 
   bool isCompiled() const;
+  std::string compilerMessages() const;
 
   bool hasName() const;
   std::string name() const;
@@ -25,6 +26,7 @@ private:
 
   std::string m_file;
   std::string m_name;
+  std::string m_compilerMessages;
   bool m_compiled;
 
 };

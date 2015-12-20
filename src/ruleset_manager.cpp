@@ -21,8 +21,22 @@ void RulesetManager::scan(const std::string& target, RulesetView::Ref view)
   m_queueTargets.push_back(target);
 
   m_activeRule = viewToRule(view);
-  m_queueRules = ruleToQueue(m_activeRule); /* reload the queue for compiling */
+  m_queueRules = ruleToQueue(m_activeRule, QueueAllRules); /* reload the queue for compiling */
 
+  m_forceCompile = false;
+  m_binaries.clear();
+  compileNextRule();
+}
+
+void RulesetManager::compile(RulesetView::Ref view)
+{
+  /* force compile a rule, and don't scan afterwards */
+  m_queueTargets.clear();
+
+  m_activeRule = viewToRule(view);
+  m_queueRules = ruleToQueue(m_activeRule, QueueAllRules);
+
+  m_forceCompile = true;
   m_binaries.clear();
   compileNextRule();
 }
@@ -58,6 +72,15 @@ void RulesetManager::updateRules(const std::vector<RulesetView::Ref>& rules)
 void RulesetManager::handleRuleCompile(Scanner::CompileResult::Ref compileResult)
 {
   Ruleset::Ref ruleset = m_queueRules.front();
+
+  if (!compileResult->rules) {
+    /* this rule failed to compile. store the error and continue to the next rule */
+    ruleset->setCompilerMessages(compileResult->compilerMessages);
+    m_queueRules.pop_front();
+    compileNextRule();
+    return;
+  }
+
   m_binaries[ruleset->file()] = compileResult->rules;
 
   /* write the compiled rules to the cache */
@@ -73,14 +96,11 @@ void RulesetManager::handleScanResult(ScannerRule::Ref rule)
 
 void RulesetManager::handleScanComplete(const std::string& error)
 {
+  /* move onto the next rule. if there are no more rules, move on to the next target */
   m_queueRules.pop_front();
   if (m_queueRules.empty()) {
-    onScanResult(m_queueTargets.front(), ScannerRule::Ref());
+    onScanResult(m_queueTargets.front(), ScannerRule::Ref()); /* empty rule signals target complete */
     m_queueTargets.pop_front();
-    if (m_queueTargets.empty()) {
-      freeBinaries(); /* cleanup before signaling completed */
-      return;
-    }
   }
   scanWithCompiledRules();
 }
@@ -88,9 +108,12 @@ void RulesetManager::handleScanComplete(const std::string& error)
 void RulesetManager::handleRuleHash(const std::string& hash)
 {
   Ruleset::Ref ruleset = m_queueRules.front();
-  if (ruleset->hash() != hash) {
+  if (ruleset->hash() != hash || m_forceCompile) {
     /* rule file has changed. will have to compile */
-    QFile::remove(compiledRuleCache(ruleset->hash()).c_str());
+    std::string ruleCacheFile = compiledRuleCache(ruleset->hash());
+    if (!ruleCacheFile.empty()) { /* remove old cache file */
+      QFile::remove(ruleCacheFile.c_str());
+    }
     ruleset->setHash(hash);
     m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleRuleCompile, this, _1));
   } else {
@@ -122,7 +145,11 @@ void RulesetManager::handleRuleSave(const std::string& error)
 
 void RulesetManager::compileNextRule()
 {
+  /* if there are no more rules to compile, start the scan */
   if (m_queueRules.empty()) {
+    /* before we begin, write any cache updates to the settings file */
+    m_settings->setRules(m_rules);
+    onRulesUpdated();
     scanWithCompiledRules();
     return;
   }
@@ -133,9 +160,12 @@ void RulesetManager::compileNextRule()
 
 void RulesetManager::scanWithCompiledRules()
 {
-  /* before we begin, write any cache updates to the settings file */
-  m_settings->setRules(m_rules);
+  if (m_queueTargets.empty()) { /* no targets */
+    freeBinaries(); /* cleanup and signal completion */
+    return;
+  }
 
+  /* if we are asked to scan a directory, push the contents to the targets queue */
   const std::string target = *m_queueTargets.begin();
   QFileInfo fileInfo(target.c_str());
   if (fileInfo.isDir()) {
@@ -149,12 +179,16 @@ void RulesetManager::scanWithCompiledRules()
     }
   }
 
-  if (m_queueRules.empty()) {
-    m_queueRules = ruleToQueue(m_activeRule); /* reload the queue for scanning */
+  if (m_queueRules.empty()) { /* reload rules if we scanned them all */
+    m_queueRules = ruleToQueue(m_activeRule, QueueCompiledRules);
+  }
+
+  if (m_queueRules.empty()) { /* no rules */
+    freeBinaries(); /* cleanup and signal completion */
+    return;
   }
 
   YR_RULES* rules = m_binaries[m_queueRules.front()->file()];
-
   m_scanner->scanStart(rules, target, 0,
     boost::bind(&RulesetManager::handleScanResult, this, _1),
     boost::bind(&RulesetManager::handleScanComplete, this, _1));
@@ -171,14 +205,32 @@ void RulesetManager::freeBinaries()
   }
 }
 
-std::list<Ruleset::Ref> RulesetManager::ruleToQueue(Ruleset::Ref rule)
+std::list<Ruleset::Ref> RulesetManager::ruleToQueue(Ruleset::Ref rule, const QueueType type)
 {
   std::list<Ruleset::Ref> rules;
-  if (!rule) { /* scanning with all rules */
-    rules = std::list<Ruleset::Ref>(m_rules.begin(), m_rules.end());
-  } else { /* scanning with a single rule */
-    rules.push_back(m_activeRule);
+
+  if (type == QueueAllRules) {
+    if (!rule) { /* scanning with all rules */
+      rules = std::list<Ruleset::Ref>(m_rules.begin(), m_rules.end());
+    } else { /* scanning with a single rule */
+      rules.push_back(rule);
+    }
+    return rules;
   }
+
+  /* return compiled rules only */
+  typedef std::map<std::string, YR_RULES*>::value_type Binary;
+  BOOST_FOREACH(Binary& binary, m_binaries) {
+    BOOST_FOREACH(Ruleset::Ref src, m_rules) {
+      if (binary.first == src->file()) { /* this is a compiled rule */
+        if (!rule || rule->file() == src->file()) {
+          rules.push_back(src);
+        }
+        break;
+      }
+    }
+  }
+
   return rules;
 }
 
@@ -200,6 +252,9 @@ Ruleset::Ref RulesetManager::viewToRule(RulesetView::Ref view)
 std::string RulesetManager::compiledRuleCache(const std::string& hash) const
 {
   /* store cached compiled rules in the executable path */
+  if (hash.empty()) {
+    return std::string();
+  }
   QDir dir = QCoreApplication::applicationDirPath();
   QString cacheDirName = "cache";
   QString cacheDir = cacheDirName + QDir::separator() + hash.c_str();

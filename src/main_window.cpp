@@ -110,11 +110,14 @@ void MainWindow::handleSelectRuleAllFromMenu()
 {
   /* null pointer means scan with every rule */
   onChangeRuleset(RulesetView::Ref());
+  m_ui.rulePath->setText(tr("[All Rules]"));
 }
 
 void MainWindow::handleSelectRuleFromMenu(int rule)
 {
-  onChangeRuleset(m_rules[rule]);
+  RulesetView::Ref view = m_rules[rule];
+  m_ui.rulePath->setText(view->file().c_str());
+  onChangeRuleset(view);
 }
 
 void MainWindow::handleTargetFileBrowse()

@@ -24,6 +24,7 @@ public:
   boost::signals2::signal<void (const std::string& error)> onScanComplete;
 
   void scan(const std::string& target, RulesetView::Ref view);
+  void compile(RulesetView::Ref view);
 
   std::vector<RulesetView::Ref> getRules() const;
   Ruleset::Ref createRule(const std::string& file);
@@ -42,7 +43,12 @@ private:
   void scanWithCompiledRules();
   void freeBinaries();
 
-  std::list<Ruleset::Ref> ruleToQueue(Ruleset::Ref rule);
+  enum QueueType {
+    QueueAllRules,
+    QueueCompiledRules
+  };
+
+  std::list<Ruleset::Ref> ruleToQueue(Ruleset::Ref rule, const QueueType type);
   Ruleset::Ref viewToRule(RulesetView::Ref view);
   std::string compiledRuleCache(const std::string& hash) const;
 
@@ -56,6 +62,8 @@ private:
   Ruleset::Ref m_activeRule;
   std::list<std::string> m_queueTargets;
   std::list<Ruleset::Ref> m_queueRules;
+
+  bool m_forceCompile;
 
 };
 

@@ -41,6 +41,7 @@ private:
 
   std::string m_target;
   RulesetView::Ref m_ruleset;
+  bool m_haveRuleset;
 
 };
 

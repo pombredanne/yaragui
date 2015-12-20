@@ -24,6 +24,9 @@ public:
   std::string hash() const;
   void setHash(const std::string& hash);
 
+  std::string compilerMessages() const;
+  void setCompilerMessages(const std::string& compilerMessages);
+
   RulesetView::Ref view() const;
   boost::property_tree::ptree serialize() const;
 
@@ -32,6 +35,7 @@ private:
   std::string m_file;
   std::string m_name;
   std::string m_hash;
+  std::string m_compilerMessages;
 
 };
 
