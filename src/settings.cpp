@@ -2,7 +2,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
-#include <QtWidgets/QApplication>
+#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 
 Settings::~Settings()
@@ -12,7 +12,7 @@ Settings::~Settings()
 
 Settings::Settings()
 {
-  QDir dir = QApplication::applicationDirPath();
+  QDir dir = QCoreApplication::applicationDirPath();
   QString file = dir.absoluteFilePath("settings.json");
   m_file = file.toStdString();
 

@@ -1,6 +1,7 @@
 #include "ruleset_manager.h"
 #include <boost/make_shared.hpp>
 #include <boost/foreach.hpp>
+#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 
@@ -36,18 +37,20 @@ std::vector<RulesetView::Ref> RulesetManager::getRules() const
   return views;
 }
 
-void RulesetManager::createRule(const std::string& file)
+Ruleset::Ref RulesetManager::createRule(const std::string& file)
 {
   Ruleset::Ref ruleset = boost::make_shared<Ruleset>(file);
   m_rules.push_back(ruleset);
-  m_settings->setRules(m_rules);
+  return ruleset;
 }
 
-void RulesetManager::handleCompile(Scanner::CompileResult::Ref compileResult)
+void RulesetManager::handleRuleCompile(Scanner::CompileResult::Ref compileResult)
 {
-  m_binaries[compileResult->file] = compileResult->rules;
-  m_queueRules.pop_front();
-  compileNextRule();
+  Ruleset::Ref ruleset = m_queueRules.front();
+  m_binaries[ruleset->file()] = compileResult->rules;
+
+  /* write the compiled rules to the cache */
+  m_scanner->rulesSave(compileResult->rules, compiledRuleCache(ruleset->hash()), boost::bind(&RulesetManager::handleRuleSave, this, _1));
 }
 
 void RulesetManager::handleScanResult(ScannerRule::Ref rule)
@@ -71,18 +74,57 @@ void RulesetManager::handleScanComplete(const std::string& error)
   scanWithCompiledRules();
 }
 
+void RulesetManager::handleRuleHash(const std::string& hash)
+{
+  Ruleset::Ref ruleset = m_queueRules.front();
+  if (ruleset->hash() != hash) {
+    /* rule file has changed. will have to compile */
+    QFile::remove(compiledRuleCache(ruleset->hash()).c_str());
+    ruleset->setHash(hash);
+    m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleRuleCompile, this, _1));
+  } else {
+    /* try to load from the cache */
+    m_scanner->rulesLoad(compiledRuleCache(hash), boost::bind(&RulesetManager::handleRuleLoad, this, _1));
+  }
+}
+
+void RulesetManager::handleRuleLoad(Scanner::LoadResult::Ref loadResult)
+{
+  Ruleset::Ref ruleset = m_queueRules.front();
+  if (!loadResult->error.empty()) {
+    /* failed to load the rules, will have to compile anyway */
+    m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleRuleCompile, this, _1));
+  } else {
+    /* loaded from the cache */
+    m_binaries[ruleset->file()] = loadResult->rules;
+    m_queueRules.pop_front();
+    compileNextRule();
+  }
+}
+
+void RulesetManager::handleRuleSave(const std::string& error)
+{
+  /* cache updated */
+  m_queueRules.pop_front();
+  compileNextRule();
+}
+
 void RulesetManager::compileNextRule()
 {
   if (m_queueRules.empty()) {
     scanWithCompiledRules();
     return;
   }
+
   Ruleset::Ref ruleset = m_queueRules.front();
-  m_scanner->rulesCompile(ruleset->file(), "", boost::bind(&RulesetManager::handleCompile, this, _1));
+  m_scanner->rulesHash(ruleset->file(), boost::bind(&RulesetManager::handleRuleHash, this, _1));
 }
 
 void RulesetManager::scanWithCompiledRules()
 {
+  /* before we begin, write any cache updates to the settings file */
+  m_settings->setRules(m_rules);
+
   const std::string target = *m_queueTargets.begin();
   QFileInfo fileInfo(target.c_str());
   if (fileInfo.isDir()) {
@@ -140,6 +182,16 @@ Ruleset::Ref RulesetManager::viewToRule(RulesetView::Ref view)
       return ruleset;
     }
   }
-  /* a temporary file */
-  return boost::make_shared<Ruleset>(view->file());
+  /* a new rule */
+  return createRule(view->file());
+}
+
+std::string RulesetManager::compiledRuleCache(const std::string& hash) const
+{
+  /* store cached compiled rules in the executable path */
+  QDir dir = QCoreApplication::applicationDirPath();
+  QString cacheDirName = "cache";
+  QString cacheDir = cacheDirName + QDir::separator() + hash.c_str();
+  QString file = dir.absoluteFilePath(cacheDir);
+  return file.toStdString();
 }

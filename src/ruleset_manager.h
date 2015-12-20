@@ -25,13 +25,16 @@ public:
   void scan(const std::string& target, RulesetView::Ref view);
 
   std::vector<RulesetView::Ref> getRules() const;
-  void createRule(const std::string& file);
+  Ruleset::Ref createRule(const std::string& file);
 
 private:
 
-  void handleCompile(Scanner::CompileResult::Ref compileResult);
+  void handleRuleCompile(Scanner::CompileResult::Ref compileResult);
   void handleScanResult(ScannerRule::Ref rule);
   void handleScanComplete(const std::string& error);
+  void handleRuleHash(const std::string& hash);
+  void handleRuleLoad(Scanner::LoadResult::Ref loadResult);
+  void handleRuleSave(const std::string& error);
 
   void compileNextRule();
   void scanWithCompiledRules();
@@ -39,6 +42,7 @@ private:
 
   std::list<Ruleset::Ref> ruleToQueue(Ruleset::Ref rule);
   Ruleset::Ref viewToRule(RulesetView::Ref view);
+  std::string compiledRuleCache(const std::string& hash) const;
 
   boost::asio::io_service& m_io;
   boost::shared_ptr<Scanner> m_scanner;

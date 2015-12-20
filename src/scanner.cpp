@@ -1,8 +1,10 @@
 #include "scanner.h"
-#include <yara.h>
 #include <sstream>
 #include <fstream>
 #include <QtCore/QCryptographicHash>
+#include <QtCore/QFileInfo>
+#include <QtCore/QDir>
+#include <yara.h>
 
 Scanner::~Scanner()
 {
@@ -139,6 +141,12 @@ void Scanner::threadRulesSave(YR_RULES* rules, const std::string& file, RulesSav
   if (m_yaraInitStatus != ERROR_SUCCESS) {
     m_caller.post(boost::bind(callback, yaraErrorToString(m_yaraInitStatus)));
     return;
+  }
+
+  QFileInfo ruleFile(file.c_str());
+  QDir ruleDir = ruleFile.absoluteDir();
+  if (!ruleDir.exists()) {
+    ruleDir.mkpath(".");
   }
 
   int saveResult = yr_rules_save(rules, file.c_str());

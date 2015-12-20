@@ -17,8 +17,12 @@ public:
   Ruleset(const std::string& file);
 
   std::string file() const;
+
   std::string name() const;
   void setName(const std::string& name);
+
+  std::string hash() const;
+  void setHash(const std::string& hash);
 
   RulesetView::Ref view() const;
   boost::property_tree::ptree serialize() const;
@@ -27,6 +31,7 @@ private:
 
   std::string m_file;
   std::string m_name;
+  std::string m_hash;
 
 };
 
