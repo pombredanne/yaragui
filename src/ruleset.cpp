@@ -43,7 +43,7 @@ void Ruleset::setHash(const std::string& hash)
 
 boost::shared_ptr<RulesetView> Ruleset::view() const
 {
-  return boost::make_shared<RulesetView>(m_file, m_name);
+  return boost::make_shared<RulesetView>(m_file, m_name, !m_hash.empty());
 }
 
 boost::property_tree::ptree Ruleset::serialize() const
