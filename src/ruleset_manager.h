@@ -24,6 +24,7 @@ public:
   boost::signals2::signal<void (const std::string& error)> onScanComplete;
 
   void scan(const std::string& target, RulesetView::Ref view);
+  void scan(const std::vector<std::string>& targets, RulesetView::Ref view);
   void compile(RulesetView::Ref view);
 
   std::vector<RulesetView::Ref> getRules() const;

@@ -19,7 +19,7 @@ public:
 
 private:
 
-  void handleChangeTarget(const std::string& file);
+  void handleChangeTargets(const std::vector<std::string>& files);
   void handleChangeRuleset(RulesetView::Ref ruleset);
 
   void handleScanResult(const std::string& target, ScannerRule::Ref rule);
@@ -39,7 +39,7 @@ private:
   boost::shared_ptr<RuleWindow> m_ruleWindow;
   boost::shared_ptr<AboutWindow> m_aboutWindow;
 
-  std::string m_target;
+  std::vector<std::string> m_targets;
   RulesetView::Ref m_ruleset;
   bool m_haveRuleset;
 

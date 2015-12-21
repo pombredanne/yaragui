@@ -17,8 +17,16 @@ RulesetManager::RulesetManager(boost::asio::io_service& io, boost::shared_ptr<Se
 
 void RulesetManager::scan(const std::string& target, RulesetView::Ref view)
 {
-  m_queueTargets.clear();
-  m_queueTargets.push_back(target);
+  /* single target scan */
+  std::vector<std::string> targets;
+  targets.push_back(target);
+  scan(targets, view);
+}
+
+void RulesetManager::scan(const std::vector<std::string>& targets, RulesetView::Ref view)
+{
+  /* multiple target scan */
+  m_queueTargets = std::list<std::string>(targets.begin(), targets.end());
 
   m_activeRule = viewToRule(view);
   m_queueRules = ruleToQueue(m_activeRule, QueueAllRules); /* reload the queue for compiling */

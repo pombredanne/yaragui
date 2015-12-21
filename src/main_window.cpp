@@ -3,10 +3,14 @@
 #include <boost/make_shared.hpp>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMenu>
+#include <QtGui/QDragEnterEvent>
+#include <QtGui/QDropEvent>
+#include <QtCore/QMimeData>
 
 MainWindow::MainWindow()
 {
   m_ui.setupUi(this);
+  setAcceptDrops(true); /* enable drag and drop */
 
   QMenu* menu = new QMenu(this);
   m_ui.targetButton->setMenu(menu);
@@ -123,22 +127,32 @@ void MainWindow::handleSelectRuleFromMenu(int rule)
 void MainWindow::handleTargetFileBrowse()
 {
   QString file = QFileDialog::getOpenFileName(this, "Select Target File", QString(), "All Files (*.*)");
-  m_ui.targetPath->setText(file);
-  onChangeTarget(file.toStdString());
+  if (!file.isEmpty()) {
+    m_ui.targetPath->setText(file);
+    std::vector<std::string> targets;
+    targets.push_back(file.toStdString());
+    onChangeTargets(targets);
+  }
 }
 
 void MainWindow::handleTargetDirectoryBrowse()
 {
   QString dir = QFileDialog::getExistingDirectory(this, "Select Target Directory");
-  m_ui.targetPath->setText(dir);
-  onChangeTarget(dir.toStdString());
+  if (!dir.isEmpty()) {
+    m_ui.targetPath->setText(dir);
+    std::vector<std::string> targets;
+    targets.push_back(dir.toStdString());
+    onChangeTargets(targets);
+  }
 }
 
 void MainWindow::handleRuleFileBrowse()
 {
   QString file = QFileDialog::getOpenFileName(this, "Select Rule File", QString(), "YARA Rules (*.yara *.yar)");
-  m_ui.rulePath->setText(file);
-  onChangeRuleset(boost::make_shared<RulesetView>(file.toStdString()));
+  if (!file.isEmpty()) {
+    m_ui.rulePath->setText(file);
+    onChangeRuleset(boost::make_shared<RulesetView>(file.toStdString()));
+  }
 }
 
 void MainWindow::handleEditRulesMenu()
@@ -149,4 +163,60 @@ void MainWindow::handleEditRulesMenu()
 void MainWindow::handleAboutMenu()
 {
   onRequestAboutWindowOpen();
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+  /* filter out non-files, like images dragged from the web browser */
+  const QMimeData* mimeData = event->mimeData();
+  if (!mimeData->hasUrls()) {
+    event->ignore();
+    return;
+  }
+
+  QList<QUrl> urls = mimeData->urls();
+  for (int i = 0; i < urls.size(); ++i) {
+    if (!urls[i].isLocalFile()) {
+      event->ignore();
+      return;
+    }
+  }
+
+  event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+  const QMimeData* mimeData = event->mimeData();
+  QList<QUrl> urls = mimeData->urls();
+
+  /* if one file was dropped, check if it is a rule */
+  if (urls.size() == 1) {
+    QFileInfo fileInfo(urls[0].toLocalFile());
+    QString file = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
+    if (fileInfo.suffix() == "yar" || fileInfo.suffix() == "yara") {
+      m_ui.rulePath->setText(file);
+      onChangeRuleset(boost::make_shared<RulesetView>(file.toStdString()));
+      event->acceptProposedAction();
+      return; /* a rule was dropped */
+    }
+  }
+
+  /* treat all other files as targets */
+  std::vector<std::string> targets;
+  for (int i = 0; i < urls.size(); ++i) {
+    QFileInfo fileInfo(urls[i].toLocalFile());
+    QString file = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
+    targets.push_back(file.toStdString());
+  }
+
+
+  if (targets.size() == 1) {
+    m_ui.targetPath->setText(targets[0].c_str());
+  } else {
+    m_ui.targetPath->setText(tr("[Multiple Targets]"));
+  }
+
+  onChangeTargets(targets);
+  event->acceptProposedAction();
 }

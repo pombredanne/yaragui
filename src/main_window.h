@@ -16,7 +16,7 @@ public:
 
   MainWindow();
 
-  boost::signals2::signal<void (const std::string& file)> onChangeTarget;
+  boost::signals2::signal<void (const std::vector<std::string>& files)> onChangeTargets;
   boost::signals2::signal<void (RulesetView::Ref ruleset)> onChangeRuleset;
   boost::signals2::signal<void ()> onRequestRuleWindowOpen;
   boost::signals2::signal<void ()> onRequestAboutWindowOpen;
@@ -35,6 +35,9 @@ public slots:
   void handleAboutMenu();
 
 private:
+
+  void dragEnterEvent(QDragEnterEvent* event);
+  void dropEvent(QDropEvent* event);
 
   Ui::MainWindow m_ui;
   QSignalMapper* m_signalMapper;
