@@ -69,10 +69,14 @@ Ruleset::Ref RulesetManager::createRule(const std::string& file)
 void RulesetManager::updateRules(const std::vector<RulesetView::Ref>& rules)
 {
   /* called when the user clicks save/apply in the rule window */
+  std::vector<Ruleset::Ref> newRules;
   BOOST_FOREACH(RulesetView::Ref view, rules) {
+    /* allow reordering and removal of rules */
     Ruleset::Ref rule = viewToRule(view);
-    rule->setName(view->name()); /* this is the only property that can be edited at present */
+    rule->setName(view->name());
+    newRules.push_back(rule);
   }
+  m_rules = newRules;
   m_settings->setRules(m_rules);
   onRulesUpdated();
 }

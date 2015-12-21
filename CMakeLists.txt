@@ -31,6 +31,7 @@ set(Sources
   src/scanner_rule.cpp
   src/main_window.cpp
   src/rule_window.cpp
+  src/compile_window.cpp
   src/about_window.cpp
 )
 
@@ -38,12 +39,14 @@ QT5_WRAP_CPP(Sources
   src/asio_events.h
   src/main_window.h
   src/rule_window.h
+  src/compile_window.h
   src/about_window.h
 )
 
 QT5_WRAP_UI(Sources
   src/ui/main_window.ui
   src/ui/rule_window.ui
+  src/ui/compile_window.ui
   src/ui/about_window.ui
 )
 

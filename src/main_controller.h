@@ -5,6 +5,7 @@
 
 #include "main_window.h"
 #include "rule_window.h"
+#include "compile_window.h"
 #include "about_window.h"
 #include "settings.h"
 #include "ruleset_manager.h"
@@ -23,10 +24,12 @@ private:
   void handleChangeRuleset(RulesetView::Ref ruleset);
 
   void handleScanResult(const std::string& target, ScannerRule::Ref rule);
+  void handleScanComplete(const std::string& error);
   void handleRulesUpdated();
 
   void handleRequestRuleWindowOpen();
   void handleRuleWindowSave(const std::vector<RulesetView::Ref>& rules);
+  void handleRuleWindowCompile(RulesetView::Ref view);
 
   void handleAboutWindowOpen();
 
@@ -35,9 +38,11 @@ private:
   boost::asio::io_service& m_io;
   boost::shared_ptr<Settings> m_settings;
   boost::shared_ptr<RulesetManager> m_rm;
+
   boost::shared_ptr<MainWindow> m_mainWindow;
   boost::shared_ptr<RuleWindow> m_ruleWindow;
   boost::shared_ptr<AboutWindow> m_aboutWindow;
+  boost::shared_ptr<CompileWindow> m_compileWindow;
 
   std::vector<std::string> m_targets;
   RulesetView::Ref m_ruleset;
